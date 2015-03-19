@@ -3,11 +3,11 @@
 
 <Configure class="org.eclipse.jetty.webapp.WebAppContext">
     <!-- USER: Change this class name to your implementation -->
-    <New id="sessionManager" class="io.lumify.simpleOrm.SimpleOrmJettySessionManager"/>
+    <New id="sessionManager" class="org.neolumin.simpleOrm.SimpleOrmJettySessionManager"/>
     <Get id="server" name="server"/>
 
     <Set name="sessionHandler">
-        <New class="io.lumify.simpleOrm.SimpleOrmJettySessionHandler">
+        <New class="org.neolumin.simpleOrm.SimpleOrmJettySessionHandler">
             <Arg>
                 <Ref id="sessionManager"/>
             </Arg>
@@ -16,7 +16,7 @@
 
     <Ref id="server">
         <Set name="sessionIdManager">
-            <New class="io.lumify.simpleOrm.SimpleOrmJettySessionIdManager">
+            <New class="org.neolumin.simpleOrm.SimpleOrmJettySessionIdManager">
                 <Arg>
                     <Ref id="server"/>
                 </Arg>

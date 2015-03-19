@@ -1,10 +1,10 @@
-package io.lumify.simpleOrm;
+package org.neolumin.simpleOrm;
 
 import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import io.lumify.simpleOrm.model.JettySession;
+import org.neolumin.simpleOrm.model.JettySession;
 import org.eclipse.jetty.nosql.NoSqlSession;
 import org.eclipse.jetty.nosql.NoSqlSessionManager;
 import org.eclipse.jetty.server.SessionManager;

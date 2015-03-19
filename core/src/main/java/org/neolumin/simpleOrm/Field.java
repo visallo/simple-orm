@@ -1,12 +1,14 @@
-package io.lumify.simpleOrm;
+package org.neolumin.simpleOrm;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(value = {ElementType.TYPE})
+@Target(value={ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Entity {
-    String tableName();
+public @interface Field {
+    String columnFamily() default "";
+
+    String columnName() default "";
 }

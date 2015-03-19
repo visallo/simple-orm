@@ -1,8 +1,8 @@
-package io.lumify.simpleOrm.model;
+package org.neolumin.simpleOrm.model;
 
-import io.lumify.simpleOrm.Entity;
-import io.lumify.simpleOrm.Field;
-import io.lumify.simpleOrm.Id;
+import org.neolumin.simpleOrm.Entity;
+import org.neolumin.simpleOrm.Field;
+import org.neolumin.simpleOrm.Id;
 
 import java.util.HashMap;
 import java.util.Map;

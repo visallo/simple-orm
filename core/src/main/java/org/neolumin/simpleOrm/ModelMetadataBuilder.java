@@ -1,4 +1,4 @@
-package io.lumify.simpleOrm;
+package org.neolumin.simpleOrm;
 
 import org.json.JSONObject;
 

@@ -1,4 +1,4 @@
-package io.lumify.simpleOrm;
+package org.neolumin.simpleOrm;
 
 public class SqlSimpleOrmContext extends SimpleOrmContext {
     private final String[] authorizations;

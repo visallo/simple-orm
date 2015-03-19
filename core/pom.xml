@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>simple-orm-core</artifactId>
-    <name>Lumify: Simple ORM: Core</name>
+    <name>Simple ORM: Core</name>
     <packaging>jar</packaging>
 
     <dependencies>

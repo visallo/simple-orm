@@ -1,4 +1,4 @@
-package io.lumify.simpleOrm;
+package org.neolumin.simpleOrm;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

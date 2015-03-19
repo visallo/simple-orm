@@ -1,4 +1,4 @@
-package io.lumify.simpleOrm;
+package org.neolumin.simpleOrm;
 
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.session.SessionHandler;
