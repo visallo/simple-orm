@@ -1,0 +1,29 @@
+<?xml version="1.0"  encoding="ISO-8859-1"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure.dtd">
+
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+    <!-- USER: Change this class name to your implementation -->
+    <New id="sessionManager" class="io.lumify.simpleOrm.SimpleOrmJettySessionManager"/>
+    <Get id="server" name="server"/>
+
+    <Set name="sessionHandler">
+        <New class="io.lumify.simpleOrm.SimpleOrmJettySessionHandler">
+            <Arg>
+                <Ref id="sessionManager"/>
+            </Arg>
+        </New>
+    </Set>
+
+    <Ref id="server">
+        <Set name="sessionIdManager">
+            <New class="io.lumify.simpleOrm.SimpleOrmJettySessionIdManager">
+                <Arg>
+                    <Ref id="server"/>
+                </Arg>
+                <Arg>
+                    <Ref id="sessionManager"/>
+                </Arg>
+            </New>
+        </Set>
+    </Ref>
+</Configure>
