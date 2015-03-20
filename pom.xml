@@ -194,6 +194,7 @@
         <module>accumulo</module>
         <module>sql</module>
         <module>jetty-session-manager</module>
+        <module>spring-session-repository</module>
     </modules>
 
     <profiles>

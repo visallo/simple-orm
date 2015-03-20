@@ -9,12 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>simple-orm-jetty-session-manager</artifactId>
-    <name>Simple ORM: Jetty Session Manager</name>
+    <artifactId>simple-orm-spring-session-repository</artifactId>
+    <name>Simple ORM: Spring Session Repository</name>
     <packaging>jar</packaging>
 
     <properties>
-        <jetty.version>9.2.7.v20150116</jetty.version>
+        <spring.session.version>1.0.0.RELEASE</spring.session.version>
     </properties>
 
     <dependencies>
@@ -24,15 +24,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-nosql</artifactId>
-            <version>${jetty.version}</version>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session</artifactId>
+            <version>${spring.session.version}</version>
         </dependency>
     </dependencies>
 
