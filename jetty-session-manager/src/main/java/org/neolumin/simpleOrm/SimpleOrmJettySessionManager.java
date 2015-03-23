@@ -4,10 +4,10 @@ import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.neolumin.simpleOrm.model.JettySession;
 import org.eclipse.jetty.nosql.NoSqlSession;
 import org.eclipse.jetty.nosql.NoSqlSessionManager;
 import org.eclipse.jetty.server.SessionManager;
+import org.neolumin.simpleOrm.model.JettySession;
 
 import java.util.Map;
 import java.util.Set;
@@ -149,15 +149,13 @@ public class SimpleOrmJettySessionManager extends NoSqlSessionManager {
 
     @Override
     protected boolean remove(NoSqlSession session) {
-        Optional<JettySession> optRow = cache.getUnchecked(session.getClusterId());
+        String id = session.getClusterId();
+        Optional<JettySession> optRow = cache.getUnchecked(id);
 
-        if (optRow.isPresent()) {
-            simpleOrmSession.delete(JettySession.class, optRow.get().getId(), getSimpleOrmContext());
-            cache.invalidate(session.getClusterId());
-            return true;
-        } else {
-            return false;
-        }
+        simpleOrmSession.delete(JettySession.class, id, getSimpleOrmContext());
+        cache.invalidate(id);
+
+        return optRow.isPresent();
     }
 
     @Override

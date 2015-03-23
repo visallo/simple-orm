@@ -64,10 +64,7 @@ public class SimpleOrmSpringSessionRepository implements SessionRepository<Sprin
 
     @Override
     public void delete(String id) {
-        Optional<SpringSession> opt = cache.getUnchecked(id);
-        if (opt.isPresent()) {
-            simpleOrmSession.delete(SpringSession.class, opt.get().getId(), simpleOrmContext);
-            cache.invalidate(id);
-        }
+        simpleOrmSession.delete(SpringSession.class, id, simpleOrmContext);
+        cache.invalidate(id);
     }
 }
