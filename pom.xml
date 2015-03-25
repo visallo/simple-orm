@@ -9,7 +9,7 @@
 
     <groupId>org.neolumin.simpleorm</groupId>
     <artifactId>simple-orm</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1-SNAPSHOT</version>
     <name>Simple ORM</name>
     <packaging>pom</packaging>
     <description>Simple ORM for Accumulo and SQL</description>
@@ -28,7 +28,7 @@
         <url>scm:git:git@github.com:v5analytics/simple-orm.git</url>
         <connection>scm:git:git@github.com:v5analytics/simple-orm.git</connection>
         <developerConnection>scm:git:git@github.com:v5analytics/simple-orm.git</developerConnection>
-        <tag>simple-orm-0.1.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
