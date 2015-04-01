@@ -193,6 +193,7 @@
         <module>sql</module>
         <module>jetty-session-manager</module>
         <module>spring-session-repository</module>
+        <module>simple-orm-in-memory</module>
     </modules>
 
     <profiles>
