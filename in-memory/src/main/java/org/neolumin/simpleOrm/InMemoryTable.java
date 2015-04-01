@@ -60,9 +60,9 @@ public class InMemoryTable<T> {
     }
 
     private Item findItemById(String id, SimpleOrmContext context) {
-        for (Item t : findAllItems(context)) {
-            if (this.modelMetadata.getId(t).equals(id)) {
-                return t;
+        for (Item item : findAllItems(context)) {
+            if (this.modelMetadata.getId(item.getObj()).equals(id)) {
+                return item;
             }
         }
         return null;
