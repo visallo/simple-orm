@@ -18,6 +18,17 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.neolumin.simpleorm</groupId>
+            <artifactId>simple-orm-test</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>

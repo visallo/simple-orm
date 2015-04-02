@@ -61,7 +61,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
 
             setTablePrefix(properties);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SimpleOrmException("Failed to init", e);
         }
     }
 
@@ -71,7 +71,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
-                throw new RuntimeException("Could not close batch writer", e);
+                throw new SimpleOrmException("Could not close batch writer", e);
             }
         }
     }
@@ -90,7 +90,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             final Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
             return scannerToRows(scanner, modelMetadata);
         } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new SimpleOrmException("Could not find all", e);
         }
     }
 
@@ -111,12 +111,12 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
                 writer.addMutation(mutation);
                 writer.flush();
             } catch (AccumuloException ae) {
-                throw new RuntimeException(ae);
+                throw new SimpleOrmException("Could not delete", ae);
             } finally {
                 writer.close();
             }
         } catch (Exception mre) {
-            throw new RuntimeException("Could not delete: " + rowClass.getName() + " id " + id, mre);
+            throw new SimpleOrmException("Could not delete: " + rowClass.getName() + " id " + id, mre);
         }
     }
 
@@ -130,7 +130,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
         try {
             this.connector.tableOperations().delete(table);
         } catch (Exception e) {
-            throw new RuntimeException("Could not delete table: " + table, e);
+            throw new SimpleOrmException("Could not delete table: " + table, e);
         }
     }
 
@@ -173,14 +173,14 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
                 }
                 T result = rows.next();
                 if (rows.hasNext()) {
-                    throw new RuntimeException("Too many rows returned for a single row query (rowKey: " + id + ")");
+                    throw new SimpleOrmException("Too many rows returned for a single row query (rowKey: " + id + ")");
                 }
                 return result;
             } finally {
                 scanner.close();
             }
         } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new SimpleOrmException("Could not find by id", e);
         }
     }
 
@@ -192,7 +192,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             scanner.setRange(Range.prefix(idPrefix));
             return scannerToRows(scanner, modelMetadata);
         } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new SimpleOrmException("Could not find by id starts with", e);
         }
     }
 
@@ -211,7 +211,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             }
             writer.flush();
         } catch (Throwable ex) {
-            throw new RuntimeException("Could not alterVisibility", ex);
+            throw new SimpleOrmException("Could not alterVisibility", ex);
         }
     }
 
@@ -257,7 +257,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             writer.addMutation(getMutationForObject(modelMetadata, modelMetadataType, obj, columnVisibility));
             writer.flush();
         } catch (MutationsRejectedException e) {
-            throw new RuntimeException("Error occurred when writing mutation", e);
+            throw new SimpleOrmException("Error occurred when writing mutation", e);
         }
     }
 
@@ -284,7 +284,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
                 writer.flush();
             }
         } catch (MutationsRejectedException e) {
-            throw new RuntimeException("Error occurred when writing mutation", e);
+            throw new SimpleOrmException("Error occurred when writing mutation", e);
         }
     }
 
@@ -332,7 +332,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
                 return writer;
             }
         } catch (TableNotFoundException e) {
-            throw new RuntimeException("Could not find table: " + tableName, e);
+            throw new SimpleOrmException("Could not find table: " + tableName, e);
         }
     }
 
@@ -369,7 +369,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             }
             return result;
         } catch (Exception e) {
-            throw new RuntimeException("Could not create class: " + modelMetadata.toString(), e);
+            throw new SimpleOrmException("Could not create class: " + modelMetadata.toString(), e);
         }
     }
 
@@ -467,7 +467,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
 
                 @Override
                 public void remove() {
-                    throw new RuntimeException("Not supported");
+                    throw new SimpleOrmException("Not supported");
                 }
             };
         }
@@ -503,7 +503,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
             }
             initializedTables.add(tableName);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SimpleOrmException("Could not initialize table", e);
         }
     }
 

@@ -14,7 +14,6 @@ import java.util.Date;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@SuppressWarnings("UnusedDeclaration")
 public class SqlSimpleOrmSession extends SimpleOrmSession {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlSimpleOrmSession.class);
     private static final int TABLE_NAME_COLUMN = 3;
@@ -33,15 +32,13 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     private String jdbcPassword;
     private String tablePrefix;
 
-    // Used by Bootstrap to initialize class
-    @SuppressWarnings("UnusedDeclaration")
     public void init(Map<String, Object> properties) {
         String jdbcDriverClass = (String) properties.get(CONFIG_DRIVER_CLASS);
         checkNotNull(jdbcDriverClass, "Missing configuration: " + CONFIG_DRIVER_CLASS);
         try {
             Class.forName(jdbcDriverClass);
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not find driver class: " + jdbcDriverClass, e);
+            throw new SimpleOrmException("Could not find driver class: " + jdbcDriverClass, e);
         }
         jdbcConnectionString = (String) properties.get(CONFIG_CONNECTION_STRING);
         checkNotNull(jdbcConnectionString, "Missing configuration: " + CONFIG_CONNECTION_STRING);
@@ -72,7 +69,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                 results.add(tableName);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to get table names", e);
+            throw new SimpleOrmException("Failed to get table names", e);
         }
         return results;
     }
@@ -85,7 +82,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to delete table", e);
+            throw new SimpleOrmException("Failed to delete table", e);
         }
     }
 
@@ -118,7 +115,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                     }
                     T result = results.next();
                     if (results.hasNext()) {
-                        throw new RuntimeException("Too many rows for the id: " + id);
+                        throw new SimpleOrmException("Too many rows for the id: " + id);
                     }
                     return result;
                 }
@@ -150,7 +147,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         } catch (Throwable ex) {
             LOGGER.error("failed to print create table", ex);
         }
-        return new RuntimeException(message, e);
+        return new SimpleOrmException(message, e);
     }
 
     private void printCreateTable(ModelMetadata modelMetadata) {
@@ -198,7 +195,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         if (field instanceof ModelMetadata.BooleanField) {
             return "BOOLEAN";
         }
-        throw new RuntimeException("Could not get sql field type of: " + field.getClass().getName());
+        throw new SimpleOrmException("Could not get sql field type of: " + field.getClass().getName());
     }
 
     @Override
@@ -235,6 +232,8 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                 } else if (field instanceof ModelMetadata.EnumField) {
                     Enum raw = ((ModelMetadata.EnumField) field).getRaw(obj);
                     stmt.setString(i++, raw == null ? null : raw.name());
+                } else if (field instanceof ModelMetadata.IntegerField) {
+                    stmt.setLong(i++, ((ModelMetadata.IntegerField) field).getRaw(obj));
                 } else if (field instanceof ModelMetadata.LongField) {
                     stmt.setLong(i++, ((ModelMetadata.LongField) field).getRaw(obj));
                 } else if (field instanceof ModelMetadata.DateField) {
@@ -245,7 +244,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                     InputStream blobData = new ByteArrayInputStream(raw);
                     stmt.setBinaryStream(i++, blobData, raw.length);
                 } else {
-                    throw new RuntimeException("Could not store field: " + field.getClass().getName());
+                    throw new SimpleOrmException("Could not store field: " + field.getClass().getName());
                 }
             }
             if (!isInsert) {
@@ -321,7 +320,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         return tablePrefix + modelMetadata.getTableName();
     }
 
-    protected Connection getConnection(SimpleOrmContext context) throws SQLException {
+    public Connection getConnection(SimpleOrmContext context) throws SQLException {
         return DriverManager.getConnection(getJdbcConnectionString(context), getJdbcConnectionProperties(context));
     }
 
@@ -364,7 +363,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                         try {
                             fetchNext();
                         } catch (Exception e) {
-                            throw new RuntimeException("Could not fetch next", e);
+                            throw new SimpleOrmException("Could not fetch next", e);
                         }
                         return next != null;
                     }
@@ -385,7 +384,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                                 closeConnection(conn);
                             }
                         } catch (Exception ex) {
-                            throw new RuntimeException("Could not close iterable", ex);
+                            throw new SimpleOrmException("Could not close iterable", ex);
                         }
                     }
 
@@ -419,6 +418,8 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                                         ((ModelMetadata.EnumField) field).set(result, str == null ? null : str.getBytes());
                                     } else if (field instanceof ModelMetadata.LongField) {
                                         ((ModelMetadata.LongField) field).setRaw(result, resultSet.getLong(i));
+                                    } else if (field instanceof ModelMetadata.IntegerField) {
+                                        ((ModelMetadata.IntegerField) field).setRaw(result, resultSet.getInt(i));
                                     } else if (field instanceof ModelMetadata.BooleanField) {
                                         ((ModelMetadata.BooleanField) field).setRaw(result, resultSet.getBoolean(i));
                                     } else if (field instanceof ModelMetadata.DateField) {
@@ -429,11 +430,11 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                                         byte[] raw = IOUtils.toByteArray(resultSet.getBinaryStream(i));
                                         ((ModelMetadata.ObjectField) field).set(result, raw);
                                     } else {
-                                        throw new RuntimeException("Could not populate field of type: " + field.getClass());
+                                        throw new SimpleOrmException("Could not populate field of type: " + field.getClass());
                                     }
                                 }
                             } catch (Exception ex) {
-                                throw new RuntimeException("Could not read sql column: " + columnLabel + " into field: " + field, ex);
+                                throw new SimpleOrmException("Could not read sql column: " + columnLabel + " into field: " + field, ex);
                             }
                         }
                         next = result;
@@ -450,7 +451,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
 
                     @Override
                     public void remove() {
-                        throw new RuntimeException("Not supported");
+                        throw new SimpleOrmException("Not supported");
                     }
                 };
             }

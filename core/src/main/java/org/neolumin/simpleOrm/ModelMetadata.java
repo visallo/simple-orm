@@ -146,7 +146,7 @@ class ModelMetadata<T> {
                 //noinspection unchecked
                 return (T) getConstructor().newInstance();
             } catch (Exception e) {
-                throw new RuntimeException("Could not create class: " + getRowClass().getName());
+                throw new SimpleOrmException("Could not create class: " + getRowClass().getName());
             }
         }
 
@@ -193,7 +193,7 @@ class ModelMetadata<T> {
             try {
                 getField().set(o, valueToJava(value));
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("Could not set field: " + getField().getName() + " on class " + o.getClass().getName());
+                throw new SimpleOrmException("Could not set field: " + getField().getName() + " on class " + o.getClass().getName());
             }
         }
 
@@ -202,7 +202,7 @@ class ModelMetadata<T> {
                 //noinspection unchecked
                 return (T) getField().get(obj);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("Could not get field value: " + getField().getName() + " on class " + obj.getClass().getName());
+                throw new SimpleOrmException("Could not get field value: " + getField().getName() + " on class " + obj.getClass().getName());
             }
         }
 
@@ -252,7 +252,7 @@ class ModelMetadata<T> {
             try {
                 getField().set(obj, value);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("Could not set field: " + getField().getName(), e);
+                throw new SimpleOrmException("Could not set field: " + getField().getName(), e);
             }
         }
     }
@@ -282,7 +282,7 @@ class ModelMetadata<T> {
             try {
                 getField().set(o, value);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("Could not set field: " + getField().getName() + " on class " + o.getClass().getName());
+                throw new SimpleOrmException("Could not set field: " + getField().getName() + " on class " + o.getClass().getName());
             }
         }
 
@@ -340,7 +340,7 @@ class ModelMetadata<T> {
                 //noinspection unchecked
                 return (T) in.readObject();
             } catch (Exception e) {
-                throw new RuntimeException("Could not read map", e);
+                throw new SimpleOrmException("Could not read map", e);
             }
         }
 
@@ -353,7 +353,7 @@ class ModelMetadata<T> {
                 out.close();
                 return buffer.toByteArray();
             } catch (IOException e) {
-                throw new RuntimeException("Could not write map", e);
+                throw new SimpleOrmException("Could not write map", e);
             }
         }
     }

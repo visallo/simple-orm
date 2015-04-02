@@ -54,7 +54,7 @@ class ModelMetadataBuilder {
         try {
             return rowClass.getDeclaredConstructor();
         } catch (Exception ex) {
-            throw new RuntimeException("Could not get constructor for class: " + rowClass.getName());
+            throw new SimpleOrmException("Could not get constructor for class: " + rowClass.getName());
         }
     }
 
@@ -142,7 +142,7 @@ class ModelMetadataBuilder {
         }
 
         if (columnFamilyFields.get(fieldColumnName) != null) {
-            throw new RuntimeException("Multiple columns map to same field: " + fieldColumnFamily + " " + fieldColumnName);
+            throw new SimpleOrmException("Multiple columns map to same field: " + fieldColumnFamily + " " + fieldColumnName);
         }
         columnFamilyFields.put(fieldColumnName, createField(field, fieldColumnFamily, fieldColumnName));
     }
@@ -168,7 +168,7 @@ class ModelMetadataBuilder {
         } else if (fieldType.isArray() && fieldType.getComponentType() == Byte.TYPE) {
             return new ModelMetadata.ByteArrayField(field, columnFamily, columnName);
         } else {
-            throw new RuntimeException("Unhandled field type: " + fieldType);
+            throw new SimpleOrmException("Unhandled field type: " + fieldType);
         }
     }
 }
