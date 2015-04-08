@@ -10,7 +10,7 @@
     </layout>
   </appender>
 
-  <logger name="org.neolumin.simpleOrm" additivity="false">
+  <logger name="com.v5analytics.simpleorm" additivity="false">
     <level value="DEBUG" />
     <appender-ref ref="console" />
   </logger>
