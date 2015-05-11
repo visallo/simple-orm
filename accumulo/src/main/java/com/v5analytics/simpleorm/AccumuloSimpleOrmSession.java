@@ -494,7 +494,11 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
 
             if (!connector.tableOperations().list().contains(tableName)) {
                 LOGGER.info("creating table: " + tableName);
-                connector.tableOperations().create(tableName);
+                try {
+                    connector.tableOperations().create(tableName);
+                } catch (TableExistsException e) {
+                    // This sometimes happens. Just ignore since the table is present.
+                }
             }
 
             IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
