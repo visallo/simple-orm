@@ -7,6 +7,8 @@ public abstract class SimpleOrmSession {
 
     public abstract SimpleOrmContext createContext(String... authorizations);
 
+    public abstract String getTablePrefix();
+
     public abstract Iterable<String> getTableList(SimpleOrmContext simpleOrmContext);
 
     public abstract void deleteTable(String table, SimpleOrmContext simpleOrmContext);

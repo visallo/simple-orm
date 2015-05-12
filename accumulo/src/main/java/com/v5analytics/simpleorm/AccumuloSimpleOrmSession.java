@@ -121,6 +121,11 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
     }
 
     @Override
+    public String getTablePrefix() {
+        return tablePrefix;
+    }
+
+    @Override
     public Iterable<String> getTableList(SimpleOrmContext simpleOrmContext) {
         return this.connector.tableOperations().list();
     }

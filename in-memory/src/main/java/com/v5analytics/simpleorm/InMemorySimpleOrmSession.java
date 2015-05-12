@@ -14,6 +14,11 @@ public class InMemorySimpleOrmSession extends SimpleOrmSession {
     }
 
     @Override
+    public String getTablePrefix() {
+        return "";
+    }
+
+    @Override
     public Iterable<String> getTableList(SimpleOrmContext simpleOrmContext) {
         List<String> tableList = new ArrayList<>();
         for (InMemoryTable table : tables.values()) {
