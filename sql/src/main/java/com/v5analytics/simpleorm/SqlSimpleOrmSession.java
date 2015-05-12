@@ -60,6 +60,11 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     }
 
     @Override
+    public String getTablePrefix() {
+        return tablePrefix;
+    }
+
+    @Override
     public Iterable<String> getTableList(SimpleOrmContext context) {
         List<String> results = new ArrayList<>();
         try (Connection conn = getConnection(context)) {
