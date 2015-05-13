@@ -66,6 +66,11 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
     }
 
     @Override
+    public SimpleOrmContext createContext(String... authorizations) {
+        return new AccumuloSimpleOrmContext(new Authorizations(authorizations));
+    }
+
+    @Override
     public void close() {
         for (BatchWriter writer : this.batchWriters.values()) {
             try {
@@ -508,7 +513,11 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
 
             IteratorSetting is = new IteratorSetting(ROW_DELETING_ITERATOR_PRIORITY, ROW_DELETING_ITERATOR_NAME, RowDeletingIterator.class);
             if (!connector.tableOperations().listIterators(tableName).containsKey(ROW_DELETING_ITERATOR_NAME)) {
-                connector.tableOperations().attachIterator(tableName, is);
+                try {
+                    connector.tableOperations().attachIterator(tableName, is);
+                } catch (AccumuloException e) {
+                    absorbIteratorNameConflictException(e);
+                }
             }
             initializedTables.add(tableName);
         } catch (Exception e) {
@@ -516,8 +525,20 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
         }
     }
 
-    @Override
-    public SimpleOrmContext createContext(String... authorizations) {
-        return new AccumuloSimpleOrmContext(new Authorizations(authorizations));
+    private void absorbIteratorNameConflictException(AccumuloException ex) throws AccumuloException {
+        // Like the TableExistsException, this sometimes happens.
+        // The exception inspection here depends on the implementation of
+        // org.apache.accumulo.core.client.impl.TableOperationsHelper#checkIteratorConflicts(), and is therefore
+        // fragile.
+        boolean isErrorOk = false;
+        Throwable cause = ex.getCause();
+        if (cause instanceof IllegalArgumentException) {
+            if (cause.getMessage().contains("iterator name conflict")) {
+                isErrorOk = true;
+            }
+        }
+        if (!isErrorOk) {
+            throw ex;
+        }
     }
 }
