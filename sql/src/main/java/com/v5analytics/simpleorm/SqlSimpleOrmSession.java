@@ -244,7 +244,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                 } else if (field instanceof ModelMetadata.DateField) {
                     Date raw = ((ModelMetadata.DateField) field).getRaw(obj);
                     stmt.setDate(i++, raw == null ? null : new java.sql.Date(raw.getTime()));
-                } else if (field instanceof ModelMetadata.ObjectField) {
+                } else if (field instanceof ModelMetadata.ObjectField || field instanceof ModelMetadata.ByteArrayField) {
                     byte[] raw = field.get(obj);
                     InputStream blobData = new ByteArrayInputStream(raw);
                     stmt.setBinaryStream(i++, blobData, raw.length);
@@ -417,23 +417,23 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                             try {
                                 if (field != null) {
                                     if (field instanceof ModelMetadata.StringField) {
-                                        ((ModelMetadata.StringField) field).setRaw(result, resultSet.getString(i));
+                                        field.setRaw(result, resultSet.getString(i));
                                     } else if (field instanceof ModelMetadata.EnumField) {
                                         String str = resultSet.getString(i);
-                                        ((ModelMetadata.EnumField) field).set(result, str == null ? null : str.getBytes());
+                                        field.set(result, str == null ? null : str.getBytes());
                                     } else if (field instanceof ModelMetadata.LongField) {
-                                        ((ModelMetadata.LongField) field).setRaw(result, resultSet.getLong(i));
+                                        field.setRaw(result, resultSet.getLong(i));
                                     } else if (field instanceof ModelMetadata.IntegerField) {
-                                        ((ModelMetadata.IntegerField) field).setRaw(result, resultSet.getInt(i));
+                                        field.setRaw(result, resultSet.getInt(i));
                                     } else if (field instanceof ModelMetadata.BooleanField) {
-                                        ((ModelMetadata.BooleanField) field).setRaw(result, resultSet.getBoolean(i));
+                                        field.setRaw(result, resultSet.getBoolean(i));
                                     } else if (field instanceof ModelMetadata.DateField) {
-                                        ((ModelMetadata.DateField) field).setRaw(result, resultSet.getDate(i));
+                                        field.setRaw(result, resultSet.getDate(i));
                                     } else if (field instanceof ModelMetadata.JSONObjectField) {
-                                        ((ModelMetadata.JSONObjectField) field).setRaw(result, new JSONObject(resultSet.getString(i)));
-                                    } else if (field instanceof ModelMetadata.ObjectField) {
+                                        field.setRaw(result, new JSONObject(resultSet.getString(i)));
+                                    } else if (field instanceof ModelMetadata.ObjectField || field instanceof ModelMetadata.ByteArrayField) {
                                         byte[] raw = IOUtils.toByteArray(resultSet.getBinaryStream(i));
-                                        ((ModelMetadata.ObjectField) field).set(result, raw);
+                                        field.set(result, raw);
                                     } else {
                                         throw new SimpleOrmException("Could not populate field of type: " + field.getClass());
                                     }
