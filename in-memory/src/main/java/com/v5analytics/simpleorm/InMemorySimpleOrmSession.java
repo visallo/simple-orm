@@ -37,6 +37,11 @@ public class InMemorySimpleOrmSession extends SimpleOrmSession {
     }
 
     @Override
+    public void clearTable(String table, SimpleOrmContext simpleOrmContext) {
+        deleteTable(table, simpleOrmContext);
+    }
+
+    @Override
     public <T> Iterable<T> findAll(Class<T> rowClass, SimpleOrmContext context) {
         InMemoryTable<T> table = getTable(rowClass);
         return table.findAll(context);
