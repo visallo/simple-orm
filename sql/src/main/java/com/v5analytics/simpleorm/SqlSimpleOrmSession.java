@@ -252,6 +252,8 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                     stmt.setString(i++, raw == null ? null : raw.name());
                 } else if (field instanceof ModelMetadata.IntegerField) {
                     stmt.setLong(i++, ((ModelMetadata.IntegerField) field).getRaw(obj));
+                } else if (field instanceof ModelMetadata.BooleanField) {
+                    stmt.setBoolean(i++, ((ModelMetadata.BooleanField) field).getRaw(obj));
                 } else if (field instanceof ModelMetadata.LongField) {
                     stmt.setLong(i++, ((ModelMetadata.LongField) field).getRaw(obj));
                 } else if (field instanceof ModelMetadata.DateField) {
