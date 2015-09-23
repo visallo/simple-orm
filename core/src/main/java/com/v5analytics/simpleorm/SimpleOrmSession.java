@@ -13,6 +13,8 @@ public abstract class SimpleOrmSession {
 
     public abstract void deleteTable(String table, SimpleOrmContext simpleOrmContext);
 
+    public abstract void clearTable(String table, SimpleOrmContext simpleOrmContext);
+
     public abstract <T> Iterable<T> findAll(Class<T> rowClass, SimpleOrmContext context);
 
     public abstract <T> T findById(Class<T> rowClass, String id, SimpleOrmContext context);

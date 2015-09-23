@@ -18,6 +18,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlSimpleOrmSession.class);
     private static final int TABLE_NAME_COLUMN = 3;
     private static final String SQL_DROP_TABLE = "DROP TABLE %s";
+    private static final String SQL_CLEAR_TABLE = "DELETE FROM %s";
     private static final String SQL_FIND_ALL = "SELECT * FROM %s";
     private static final String SQL_FIND_BY_ID = "SELECT * FROM %s WHERE id=?";
     private static final String SQL_FIND_BY_ID_STARTS_WITH = "SELECT * FROM %s WHERE id LIKE ?";
@@ -88,6 +89,18 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new SimpleOrmException("Failed to delete table", e);
+        }
+    }
+
+    @Override
+    public void clearTable(String table, SimpleOrmContext context) {
+        try (Connection conn = getConnection(context)) {
+            String sql = String.format(SQL_CLEAR_TABLE, table);
+            LOGGER.debug("sql: " + sql);
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new SimpleOrmException("Failed to clear table", e);
         }
     }
 

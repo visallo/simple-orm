@@ -144,6 +144,15 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
         }
     }
 
+    @Override
+    public void clearTable(String table, SimpleOrmContext simpleOrmContext) {
+        try {
+            this.connector.tableOperations().deleteRows(table, null, null);
+        } catch (Exception e) {
+            throw new SimpleOrmException("Could not clear table: " + table, e);
+        }
+    }
+
     private <T> Iterable<T> scannerToRows(final Scanner scanner, final ModelMetadata<T> modelMetadata) {
         return new Iterable<T>() {
             @Override
