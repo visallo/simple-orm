@@ -54,7 +54,8 @@ public class SqlTest extends TestBase {
             String sql = "CREATE TABLE simpleModelObject (\n" +
                     "  id VARCHAR(8000) PRIMARY KEY,\n" +
                     "  visibility VARCHAR(8000) NOT NULL,\n" +
-                    "  intColumn INTEGER,\n" +
+                    "  intColumn INTEGER NOT NULL,\n" +
+                    "  nullableIntColumn INTEGER, \n" +
                     "  stringColumn TEXT\n" +
                     ");";
             PreparedStatement stmt = conn.prepareStatement(sql);

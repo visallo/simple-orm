@@ -243,29 +243,36 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             stmt.setString(i++, visibility);
             for (ModelMetadata.Field field : allFields) {
                 if (field instanceof ModelMetadata.StringField) {
-                    stmt.setString(i++, ((ModelMetadata.StringField) field).getRaw(obj));
+                    stmt.setString(i, ((ModelMetadata.StringField) field).getRaw(obj));
                 } else if (field instanceof ModelMetadata.JSONObjectField) {
                     JSONObject raw = ((ModelMetadata.JSONObjectField) field).getRaw(obj);
-                    stmt.setString(i++, raw == null ? null : raw.toString());
+                    stmt.setString(i, raw == null ? null : raw.toString());
                 } else if (field instanceof ModelMetadata.EnumField) {
                     Enum raw = ((ModelMetadata.EnumField) field).getRaw(obj);
-                    stmt.setString(i++, raw == null ? null : raw.name());
+                    stmt.setString(i, raw == null ? null : raw.name());
                 } else if (field instanceof ModelMetadata.IntegerField) {
-                    stmt.setLong(i++, ((ModelMetadata.IntegerField) field).getRaw(obj));
+                    if (!setIfNullValue(stmt, i, field, Types.INTEGER, obj)) {
+                        stmt.setInt(i, ((ModelMetadata.IntegerField) field).getRaw(obj));
+                    }
                 } else if (field instanceof ModelMetadata.BooleanField) {
-                    stmt.setBoolean(i++, ((ModelMetadata.BooleanField) field).getRaw(obj));
+                    if (!setIfNullValue(stmt, i, field, Types.BOOLEAN, obj)) {
+                        stmt.setBoolean(i, ((ModelMetadata.BooleanField) field).getRaw(obj));
+                    }
                 } else if (field instanceof ModelMetadata.LongField) {
-                    stmt.setLong(i++, ((ModelMetadata.LongField) field).getRaw(obj));
+                    if (!setIfNullValue(stmt, i, field, Types.INTEGER, obj)) {
+                        stmt.setLong(i, ((ModelMetadata.LongField) field).getRaw(obj));
+                    }
                 } else if (field instanceof ModelMetadata.DateField) {
                     Date raw = ((ModelMetadata.DateField) field).getRaw(obj);
-                    stmt.setDate(i++, raw == null ? null : new java.sql.Date(raw.getTime()));
+                    stmt.setDate(i, raw == null ? null : new java.sql.Date(raw.getTime()));
                 } else if (field instanceof ModelMetadata.ObjectField || field instanceof ModelMetadata.ByteArrayField) {
                     byte[] raw = field.get(obj);
                     InputStream blobData = new ByteArrayInputStream(raw);
-                    stmt.setBinaryStream(i++, blobData, raw.length);
+                    stmt.setBinaryStream(i, blobData, raw.length);
                 } else {
                     throw new SimpleOrmException("Could not store field: " + field.getClass().getName());
                 }
+                i += 1;
             }
             if (!isInsert) {
                 stmt.setString(i, objId);
@@ -273,6 +280,21 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw handleSQLException(modelMetadata, "Failed to insert: " + obj, e);
+        }
+    }
+
+    /**
+     * Use this method to set null on the statement for auto-boxed field values that could be null.
+     * @return true if the field value is null and the statement was set null; false if the field value is non-null.
+     */
+    private boolean setIfNullValue(PreparedStatement stmt, int paramIndex, ModelMetadata.Field field, int sqlType,
+                                   Object obj) throws SQLException {
+        Object raw = field.getRaw(obj);
+        if (raw == null) {
+            stmt.setNull(paramIndex, sqlType, null);
+            return true;
+        } else {
+            return false;
         }
     }
 
