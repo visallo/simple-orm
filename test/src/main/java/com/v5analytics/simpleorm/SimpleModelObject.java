@@ -11,6 +11,9 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
     @Field
     private int intColumn;
 
+    @Field
+    private Integer nullableIntColumn;
+
     public String getId() {
         return id;
     }
@@ -33,6 +36,14 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
 
     public void setIntColumn(int intColumn) {
         this.intColumn = intColumn;
+    }
+
+    public Integer getNullableIntColumn() {
+        return nullableIntColumn;
+    }
+
+    public void setNullableIntColumn(Integer nullableIntColumn) {
+        this.nullableIntColumn = nullableIntColumn;
     }
 
     @Override
