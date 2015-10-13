@@ -1,3 +1,10 @@
+# v1.0.1
+
+* Support for byte array fields
+* Added method to clear table (delete all rows)
+* Fixed bug where boolean fields weren't being saved
+* Fixed bug where null Integer/Long/Boolean values weren't able to be saved
+
 # v1.0.0
 
 * Data store implementations:
@@ -7,10 +14,3 @@
 * Servlet session management implementations:
   * Jetty (`org.eclipse.jetty.server.SessionManager`)
   * Spring Framework (`org.springframework.session.SessionRepository`)
-
-# v1.0.1
-
-* Support for byte array fields
-* Added method to clear table (delete all rows)
-* Fixed bug where boolean fields weren't being saved
-* Fixed bug where null Integer/Long/Boolean values weren't able to be saved
