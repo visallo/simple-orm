@@ -12,12 +12,11 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertTrue;
+
 public class SqlTest extends TestBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlTest.class);
-    private String driverClass = "org.h2.Driver";
     private String connectionString;
-    private String userName = "sa";
-    private String password = "";
     private File tempDir;
 
     @Before
@@ -26,10 +25,9 @@ public class SqlTest extends TestBase {
         super.before();
 
         tempDir = File.createTempFile("accumulo-simple-orm-test-", Long.toString(System.nanoTime()));
-        tempDir.delete();
-        tempDir.mkdir();
+        assertTrue(tempDir.delete());
+        assertTrue(tempDir.mkdir());
         LOGGER.info("writing to: " + tempDir);
-
         connectionString = "jdbc:h2:" + tempDir.getAbsolutePath();
     }
 
@@ -37,17 +35,17 @@ public class SqlTest extends TestBase {
     @Override
     public void after() throws Exception {
         super.after();
-        tempDir.delete();
+        assertTrue(tempDir.delete());
     }
 
     @Override
     protected SimpleOrmSession createSession() {
         SqlSimpleOrmSession session = new SqlSimpleOrmSession();
         Map<String, Object> properties = new HashMap<>();
-        properties.put(SqlSimpleOrmSession.CONFIG_DRIVER_CLASS, driverClass);
+        properties.put(SqlSimpleOrmSession.CONFIG_DRIVER_CLASS, "org.h2.Driver");
         properties.put(SqlSimpleOrmSession.CONFIG_CONNECTION_STRING, connectionString);
-        properties.put(SqlSimpleOrmSession.CONFIG_USER_NAME, userName);
-        properties.put(SqlSimpleOrmSession.CONFIG_PASSWORD, password);
+        properties.put(SqlSimpleOrmSession.CONFIG_USER_NAME, "sa");
+        properties.put(SqlSimpleOrmSession.CONFIG_PASSWORD, "");
         session.init(properties);
 
         try (Connection conn = session.getConnection(session.createContext())) {
@@ -56,7 +54,10 @@ public class SqlTest extends TestBase {
                     "  visibility VARCHAR(8000) NOT NULL,\n" +
                     "  intColumn INTEGER NOT NULL,\n" +
                     "  nullableIntColumn INTEGER, \n" +
-                    "  stringColumn TEXT\n" +
+                    "  stringColumn TEXT NOT NULL, \n" +
+                    "  nullableStringColumn TEXT, \n" +
+                    "  jsonColumn TEXT NOT NULL, \n" +
+                    "  nullableJsonColumn TEXT\n" +
                     ");";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.execute();

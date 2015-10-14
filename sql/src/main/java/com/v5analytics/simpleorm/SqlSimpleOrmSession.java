@@ -467,7 +467,8 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                                     } else if (field instanceof ModelMetadata.DateField) {
                                         field.setRaw(result, resultSet.getDate(i));
                                     } else if (field instanceof ModelMetadata.JSONObjectField) {
-                                        field.setRaw(result, new JSONObject(resultSet.getString(i)));
+                                        String str = resultSet.getString(i);
+                                        field.setRaw(result, str == null ? null : new JSONObject(str));
                                     } else if (field instanceof ModelMetadata.ObjectField || field instanceof ModelMetadata.ByteArrayField) {
                                         byte[] raw = IOUtils.toByteArray(resultSet.getBinaryStream(i));
                                         field.set(result, raw);
