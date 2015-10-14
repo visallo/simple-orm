@@ -1,3 +1,7 @@
+# v1.0.2
+
+* Fixed more issues with null values
+
 # v1.0.1
 
 * Support for byte array fields
