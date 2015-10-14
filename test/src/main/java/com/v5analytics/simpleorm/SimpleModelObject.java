@@ -1,5 +1,7 @@
 package com.v5analytics.simpleorm;
 
+import org.json.JSONObject;
+
 @Entity(tableName = "simpleModelObject")
 public class SimpleModelObject implements Comparable<SimpleModelObject> {
     @Id
@@ -9,10 +11,19 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
     private String stringColumn;
 
     @Field
+    private String nullableStringColumn;
+
+    @Field
     private int intColumn;
 
     @Field
     private Integer nullableIntColumn;
+
+    @Field
+    private JSONObject jsonColumn;
+
+    @Field
+    private JSONObject nullableJsonColumn;
 
     public String getId() {
         return id;
@@ -30,6 +41,14 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
         this.stringColumn = stringColumn;
     }
 
+    public String getNullableStringColumn() {
+        return nullableStringColumn;
+    }
+
+    public void setNullableStringColumn(String nullableStringColumn) {
+        this.nullableStringColumn = nullableStringColumn;
+    }
+
     public int getIntColumn() {
         return intColumn;
     }
@@ -44,6 +63,22 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
 
     public void setNullableIntColumn(Integer nullableIntColumn) {
         this.nullableIntColumn = nullableIntColumn;
+    }
+
+    public JSONObject getJsonColumn() {
+        return jsonColumn;
+    }
+
+    public void setJsonColumn(JSONObject jsonColumn) {
+        this.jsonColumn = jsonColumn;
+    }
+
+    public JSONObject getNullableJsonColumn() {
+        return nullableJsonColumn;
+    }
+
+    public void setNullableJsonColumn(JSONObject nullableJsonColumn) {
+        this.nullableJsonColumn = nullableJsonColumn;
     }
 
     @Override

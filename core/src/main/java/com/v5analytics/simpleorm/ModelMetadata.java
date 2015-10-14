@@ -191,7 +191,7 @@ class ModelMetadata<T> {
 
         public void set(Object o, byte[] value) {
             try {
-                getField().set(o, valueToJava(value));
+                getField().set(o, value == null ? null : valueToJava(value));
             } catch (IllegalAccessException e) {
                 throw new SimpleOrmException("Could not set field: " + getField().getName() + " on class " + o.getClass().getName());
             }
