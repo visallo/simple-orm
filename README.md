@@ -1,4 +1,4 @@
-# simple-orm
+# simple-orm [![Build Status](https://travis-ci.org/v5analytics/simple-orm.svg?branch=master)](https://travis-ci.org/v5analytics/simple-orm)
 
 An ORM solution which talks with SQL and big data database solutions using the same code.
 
