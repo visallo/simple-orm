@@ -3,7 +3,10 @@ package com.v5analytics.simpleorm;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -22,9 +25,12 @@ public abstract class TestBase {
     }
 
     @Test
-    public void testFindAll() {
+    public void testFindAll() throws ParseException {
         SimpleOrmSession session = createSession();
         SimpleOrmContext ctx = session.createContext();
+
+        Date date1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2016-03-11 10:16:15");
+        Date date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2016-03-12 12:33:41");
 
         List<SimpleModelObject> items = newArrayList(session.findAll(SimpleModelObject.class, ctx));
         assertEquals("expected no items", 0, items.size());
@@ -32,6 +38,9 @@ public abstract class TestBase {
         SimpleModelObject obj1 = new SimpleModelObject();
         obj1.setId("1");
         obj1.setIntColumn(42);
+        obj1.setByteArrayColumn(new byte[]{1, 2, 3, 4, 5});
+        obj1.setBooleanColumn(true);
+        obj1.setDateColumn(date1);
         obj1.setStringColumn("Hello World");
         obj1.setJsonColumn(new JSONObject("{ name: \"The Name\" }"));
         session.save(obj1, "", ctx);
@@ -39,6 +48,9 @@ public abstract class TestBase {
         SimpleModelObject obj2 = new SimpleModelObject();
         obj2.setId("2");
         obj2.setIntColumn(100);
+        obj2.setByteArrayColumn(new byte[]{6, 7, 8, 9, 10});
+        obj2.setBooleanColumn(false);
+        obj2.setDateColumn(date2);
         obj2.setStringColumn("Simple ORM");
         obj2.setJsonColumn(new JSONObject("{ value: 12 }"));
         session.save(obj2, "", ctx);

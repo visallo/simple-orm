@@ -15,15 +15,8 @@ import java.util.Date;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SqlSimpleOrmSession extends SimpleOrmSession {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqlSimpleOrmSession.class);
     private static final int TABLE_NAME_COLUMN = 3;
-    private static final String SQL_DROP_TABLE = "DROP TABLE %s";
-    private static final String SQL_CLEAR_TABLE = "DELETE FROM %s";
-    private static final String SQL_FIND_ALL = "SELECT * FROM %s";
-    private static final String SQL_FIND_BY_ID = "SELECT * FROM %s WHERE id=?";
-    private static final String SQL_FIND_BY_ID_STARTS_WITH = "SELECT * FROM %s WHERE id LIKE ?";
-    private static final String SQL_ALTER_VISIBILITY = "UPDATE %s SET visibility=? WHERE id=?";
-    private static final String SQL_DELETE = "DELETE FROM %s WHERE id=?";
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqlSimpleOrmSession.class);
     public static final String CONFIG_DRIVER_CLASS = "simpleOrm.sql.driverClass";
     public static final String CONFIG_CONNECTION_STRING = "simpleOrm.sql.connectionString";
     public static final String CONFIG_USER_NAME = "simpleOrm.sql.userName";
@@ -31,7 +24,8 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     private String jdbcConnectionString;
     private String jdbcUserName;
     private String jdbcPassword;
-    private String tablePrefix;
+    private Set<String> existingTables = new HashSet<>();
+    private SqlGenerator sqlGenerator;
 
     public void init(Map<String, Object> properties) {
         String jdbcDriverClass = (String) properties.get(CONFIG_DRIVER_CLASS);
@@ -45,14 +39,15 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         checkNotNull(jdbcConnectionString, "Missing configuration: " + CONFIG_CONNECTION_STRING);
         jdbcUserName = (String) properties.get(CONFIG_USER_NAME);
         jdbcPassword = (String) properties.get(CONFIG_PASSWORD);
-        setTablePrefix(properties);
+        sqlGenerator = new SqlGenerator(getTablePrefix(properties));
     }
 
-    private void setTablePrefix(Map<String, Object> properties) {
-        tablePrefix = (String) properties.get(TABLE_PREFIX);
+    private static String getTablePrefix(Map<String, Object> properties) {
+        String tablePrefix = (String) properties.get(TABLE_PREFIX);
         if (tablePrefix == null) {
             tablePrefix = "";
         }
+        return tablePrefix;
     }
 
     @Override
@@ -62,12 +57,12 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
 
     @Override
     public String getTablePrefix() {
-        return tablePrefix;
+        return sqlGenerator.getTablePrefix();
     }
 
     @Override
-    public Iterable<String> getTableList(SimpleOrmContext context) {
-        List<String> results = new ArrayList<>();
+    public Set<String> getTableList(SimpleOrmContext context) {
+        Set<String> results = new HashSet<>();
         try (Connection conn = getConnection(context)) {
             ResultSet rs = conn.getMetaData().getTables(null, null, "%", null);
             while (rs.next()) {
@@ -83,7 +78,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     @Override
     public void deleteTable(String tableName, SimpleOrmContext context) {
         try (Connection conn = getConnection(context)) {
-            String sql = String.format(SQL_DROP_TABLE, tableName);
+            String sql = sqlGenerator.getDropTableSql(tableName);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.executeUpdate();
@@ -95,7 +90,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     @Override
     public void clearTable(String table, SimpleOrmContext context) {
         try (Connection conn = getConnection(context)) {
-            String sql = String.format(SQL_CLEAR_TABLE, table);
+            String sql = sqlGenerator.getClearTableSql(table);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.executeUpdate();
@@ -106,23 +101,23 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
 
     @Override
     public <T> Iterable<T> findAll(Class<T> rowClass, SimpleOrmContext context) {
-        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
+        ModelMetadata<T> modelMetadata = getModelMetadata(context, rowClass);
         try {
             Connection conn = getConnection(context);
-            String sql = String.format(SQL_FIND_ALL, getTableName(modelMetadata));
+            String sql = sqlGenerator.getFindAllSql(modelMetadata);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             return resultSetToRows(modelMetadata, conn, stmt.executeQuery());
         } catch (SQLException e) {
-            throw handleSQLException(modelMetadata, "Failed to find all", e);
+            throw new SimpleOrmException("Failed to find all", e);
         }
     }
 
     @Override
     public <T> T findById(Class<T> rowClass, String id, SimpleOrmContext context) {
-        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
+        ModelMetadata<T> modelMetadata = getModelMetadata(context, rowClass);
         try (Connection conn = getConnection(context)) {
-            String sql = String.format(SQL_FIND_BY_ID, getTableName(modelMetadata));
+            String sql = sqlGenerator.getFindByIdSql(modelMetadata);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, id);
@@ -139,86 +134,28 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                 }
             }
         } catch (Exception e) {
-            throw handleSQLException(modelMetadata, "Failed to find by id: " + id, e);
+            throw new SimpleOrmException("Failed to find by id: " + id, e);
         }
     }
 
     @Override
     public <T> Iterable<T> findByIdStartsWith(Class<T> rowClass, String idPrefix, SimpleOrmContext context) {
-        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
+        ModelMetadata<T> modelMetadata = getModelMetadata(context, rowClass);
         try {
             Connection conn = getConnection(context);
-            String sql = String.format(SQL_FIND_BY_ID_STARTS_WITH, getTableName(modelMetadata));
+            String sql = sqlGenerator.getFindByIdStartsWithSql(modelMetadata);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, idPrefix + "%");
             return resultSetToRows(modelMetadata, conn, stmt.executeQuery());
         } catch (SQLException e) {
-            throw handleSQLException(modelMetadata, "Failed to find by id starts with: " + idPrefix, e);
+            throw new SimpleOrmException("Failed to find by id starts with: " + idPrefix, e);
         }
-    }
-
-    private RuntimeException handleSQLException(ModelMetadata modelMetadata, String message, Exception e) {
-        LOGGER.error(message, e);
-        try {
-            printCreateTable(modelMetadata);
-        } catch (Throwable ex) {
-            LOGGER.error("failed to print create table", ex);
-        }
-        return new SimpleOrmException(message, e);
-    }
-
-    private void printCreateTable(ModelMetadata modelMetadata) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CREATE TABLE ").append(getTableName(modelMetadata)).append(" (\n");
-        sb.append("  id VARCHAR(8000) PRIMARY KEY,\n");
-        sb.append("  visibility VARCHAR(8000) NOT NULL,\n");
-        boolean first = true;
-        for (Object oField : modelMetadata.getFields()) {
-            if (!first) {
-                sb.append(",\n");
-            }
-            ModelMetadata.Field field = (ModelMetadata.Field) oField;
-            String columnName = getColumnName(field);
-            String sqlType = getSqlType(field);
-            sb.append("  ").append(columnName).append(" ").append(sqlType);
-            first = false;
-        }
-        sb.append("\n);");
-        LOGGER.debug("Did you create your table:\n " + sb.toString());
-    }
-
-    private String getSqlType(ModelMetadata.Field field) {
-        if (field instanceof ModelMetadata.StringField) {
-            return "TEXT";
-        }
-        if (field instanceof ModelMetadata.LongField) {
-            return "BIGINT";
-        }
-        if (field instanceof ModelMetadata.IntegerField) {
-            return "INTEGER";
-        }
-        if (field instanceof ModelMetadata.DateField) {
-            return "TIMESTAMP";
-        }
-        if (field instanceof ModelMetadata.EnumField) {
-            return "VARCHAR(255)";
-        }
-        if (field instanceof ModelMetadata.JSONObjectField) {
-            return "TEXT";
-        }
-        if (field instanceof ModelMetadata.ObjectField) {
-            return "BYTEA";
-        }
-        if (field instanceof ModelMetadata.BooleanField) {
-            return "BOOLEAN";
-        }
-        throw new SimpleOrmException("Could not get sql field type of: " + field.getClass().getName());
     }
 
     @Override
     public <T> void save(T obj, String visibility, SimpleOrmContext context) {
-        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(obj);
+        ModelMetadata<T> modelMetadata = getModelMetadata(context, obj);
         ModelMetadata.Type modelMetadataType = modelMetadata.getTypeFromObject(obj);
         Collection<ModelMetadata.Field> allFields = modelMetadataType.getAllFields();
         String objId = modelMetadata.getId(obj);
@@ -228,10 +165,10 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         T existingObj = (T) findById(obj.getClass(), objId, context);
         if (existingObj != null) {
             isInsert = false;
-            sql = getUpdateSql(allFields, getTableName(modelMetadata));
+            sql = sqlGenerator.getUpdateSql(modelMetadata, allFields);
         } else {
             isInsert = true;
-            sql = getInsertSql(allFields, getTableName(modelMetadata));
+            sql = sqlGenerator.getInsertSql(modelMetadata, allFields);
         }
         try (Connection conn = getConnection(context)) {
             LOGGER.debug("sql: " + sql);
@@ -264,11 +201,15 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                     }
                 } else if (field instanceof ModelMetadata.DateField) {
                     Date raw = ((ModelMetadata.DateField) field).getRaw(obj);
-                    stmt.setDate(i, raw == null ? null : new java.sql.Date(raw.getTime()));
+                    stmt.setTimestamp(i, raw == null ? null : new Timestamp(raw.getTime()));
                 } else if (field instanceof ModelMetadata.ObjectField || field instanceof ModelMetadata.ByteArrayField) {
                     byte[] raw = field.get(obj);
-                    InputStream blobData = new ByteArrayInputStream(raw);
-                    stmt.setBinaryStream(i, blobData, raw.length);
+                    if (raw == null) {
+                        stmt.setBlob(i, (InputStream) null);
+                    } else {
+                        InputStream blobData = new ByteArrayInputStream(raw);
+                        stmt.setBinaryStream(i, blobData, raw.length);
+                    }
                 } else {
                     throw new SimpleOrmException("Could not store field: " + field.getClass().getName());
                 }
@@ -279,12 +220,13 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             }
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw handleSQLException(modelMetadata, "Failed to insert: " + obj, e);
+            throw new SimpleOrmException("Failed to insert: " + obj, e);
         }
     }
 
     /**
      * Use this method to set null on the statement for auto-boxed field values that could be null.
+     *
      * @return true if the field value is null and the statement was set null; false if the field value is non-null.
      */
     private boolean setIfNullValue(PreparedStatement stmt, int paramIndex, ModelMetadata.Field field, int sqlType,
@@ -298,68 +240,39 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         }
     }
 
-    private String getUpdateSql(Collection<ModelMetadata.Field> allFields, String tableName) {
-        StringBuilder result = new StringBuilder();
-        result.append("UPDATE ").append(tableName).append(" SET visibility=?");
-        for (ModelMetadata.Field field : allFields) {
-            result.append(",").append(getColumnName(field)).append("=?");
-        }
-        result.append(" WHERE id=?");
-        return result.toString();
-    }
-
-    private String getInsertSql(Collection<ModelMetadata.Field> allFields, String tableName) {
-        StringBuilder result = new StringBuilder();
-        result.append("INSERT INTO ").append(tableName).append(" (id,visibility");
-        for (ModelMetadata.Field field : allFields) {
-            result.append(",").append(getColumnName(field));
-        }
-        result.append(") VALUES (?,?");
-        //noinspection UnusedDeclaration
-        for (ModelMetadata.Field field : allFields) {
-            result.append(",?");
-        }
-        result.append(")");
-        return result.toString();
-    }
-
     @Override
     public <T> void delete(Class<T> rowClass, String id, SimpleOrmContext context) {
-        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
+        ModelMetadata<T> modelMetadata = getModelMetadata(context, rowClass);
         try (Connection conn = getConnection(context)) {
-            String sql = String.format(SQL_DELETE, getTableName(modelMetadata));
+            String sql = sqlGenerator.getDeleteByIdSql(modelMetadata);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw handleSQLException(modelMetadata, "Failed to delete: " + id, e);
+            throw new SimpleOrmException("Failed to delete: " + id, e);
         }
     }
 
     @Override
     public <T> void alterVisibility(T obj, String currentVisibility, String newVisibility, SimpleOrmContext context) {
-        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(obj);
+        ModelMetadata<T> modelMetadata = getModelMetadata(context, obj);
         String objId = modelMetadata.getId(obj);
         try (Connection conn = getConnection(context)) {
-            String sql = String.format(SQL_ALTER_VISIBILITY, getTableName(modelMetadata));
+            String sql = sqlGenerator.getAlterVisibilitySql(modelMetadata);
             LOGGER.debug("sql: " + sql);
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, newVisibility);
             stmt.setString(2, objId);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw handleSQLException(modelMetadata, "Failed to update visibility of: " + objId, e);
+            throw new SimpleOrmException("Failed to update visibility of: " + objId, e);
         }
     }
 
     @Override
     public void close() {
 
-    }
-
-    private <T> String getTableName(ModelMetadata<T> modelMetadata) {
-        return tablePrefix + modelMetadata.getTableName();
     }
 
     public Connection getConnection(SimpleOrmContext context) throws SQLException {
@@ -389,7 +302,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         final ResultSetMetaData resultSetMetadata = resultSet.getMetaData();
         final String discriminatorColumnName;
         if (modelMetadata.getDiscriminatorColumnFamily() != null || modelMetadata.getDiscriminatorColumnName() != null) {
-            discriminatorColumnName = getColumnName(modelMetadata.getDiscriminatorColumnFamily(), modelMetadata.getDiscriminatorColumnName());
+            discriminatorColumnName = sqlGenerator.getColumnName(modelMetadata.getDiscriminatorColumnFamily(), modelMetadata.getDiscriminatorColumnName());
         } else {
             discriminatorColumnName = null;
         }
@@ -430,6 +343,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                         }
                     }
 
+                    @SuppressWarnings("unchecked")
                     private void fetchNext() throws SQLException, IOException {
                         if (next != null || resultSet.isClosed()) {
                             return;
@@ -459,19 +373,31 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                                         String str = resultSet.getString(i);
                                         field.set(result, str == null ? null : str.getBytes());
                                     } else if (field instanceof ModelMetadata.LongField) {
-                                        field.setRaw(result, resultSet.getLong(i));
+                                        long rsLong = resultSet.getLong(i);
+                                        boolean wasNull = resultSet.wasNull();
+                                        field.setRaw(result, wasNull ? null : rsLong);
                                     } else if (field instanceof ModelMetadata.IntegerField) {
-                                        field.setRaw(result, resultSet.getInt(i));
+                                        int rsInt = resultSet.getInt(i);
+                                        boolean wasNull = resultSet.wasNull();
+                                        field.setRaw(result, wasNull ? null : rsInt);
                                     } else if (field instanceof ModelMetadata.BooleanField) {
-                                        field.setRaw(result, resultSet.getBoolean(i));
+                                        boolean rsBoolean = resultSet.getBoolean(i);
+                                        boolean wasNull = resultSet.wasNull();
+                                        field.setRaw(result, wasNull ? null : rsBoolean);
                                     } else if (field instanceof ModelMetadata.DateField) {
-                                        field.setRaw(result, resultSet.getDate(i));
+                                        Timestamp timestamp = resultSet.getTimestamp(i);
+                                        field.setRaw(result, timestamp == null ? null : new Date(timestamp.getTime()));
                                     } else if (field instanceof ModelMetadata.JSONObjectField) {
                                         String str = resultSet.getString(i);
                                         field.setRaw(result, str == null ? null : new JSONObject(str));
                                     } else if (field instanceof ModelMetadata.ObjectField || field instanceof ModelMetadata.ByteArrayField) {
-                                        byte[] raw = IOUtils.toByteArray(resultSet.getBinaryStream(i));
-                                        field.set(result, raw);
+                                        InputStream value = resultSet.getBinaryStream(i);
+                                        if (value == null) {
+                                            field.set(result, null);
+                                        } else {
+                                            byte[] raw = IOUtils.toByteArray(value);
+                                            field.set(result, raw);
+                                        }
                                     } else {
                                         throw new SimpleOrmException("Could not populate field of type: " + field.getClass());
                                     }
@@ -485,7 +411,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
 
                     private ModelMetadata.Field findFieldByColumnName(Collection<ModelMetadata.Field> fields, String columnLabel) {
                         for (ModelMetadata.Field field : fields) {
-                            if (getColumnName(field).equalsIgnoreCase(columnLabel)) {
+                            if (sqlGenerator.getColumnName(field).equalsIgnoreCase(columnLabel)) {
                                 return field;
                             }
                         }
@@ -501,30 +427,43 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         };
     }
 
-    private String getColumnName(ModelMetadata.Field field) {
-        if (field instanceof ModelMetadata.IdField) {
-            return "id";
-        }
-        String columnFamily = field.getColumnFamily();
-        String columnName = field.getColumnName();
-        return getColumnName(columnFamily, columnName);
+    private <T> ModelMetadata<T> getModelMetadata(SimpleOrmContext context, Class<T> rowClass) {
+        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
+        createTableIfNotExists(context, modelMetadata);
+        return modelMetadata;
     }
 
-    private String getColumnName(String columnFamily, String columnName) {
-        StringBuilder result = new StringBuilder();
-        if (columnFamily != null && columnFamily.length() > 0) {
-            result.append(columnFamily).append('_');
-        }
-        if (columnName != null && columnName.length() > 0) {
-            result.append(columnName);
-        }
-        return result.toString();
+    private <T> ModelMetadata<T> getModelMetadata(SimpleOrmContext context, T rowObject) {
+        ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowObject);
+        createTableIfNotExists(context, modelMetadata);
+        return modelMetadata;
     }
 
-    private static interface ClosableIterable<T> extends Iterable<T> {
+    private <T> void createTableIfNotExists(SimpleOrmContext context, ModelMetadata<T> modelMetadata) {
+        if (existingTables.size() == 0) {
+            existingTables.addAll(getTableList(context));
+        }
+
+        String tableName = sqlGenerator.getTableName(modelMetadata);
+        if (!existingTables.contains(tableName)) {
+            LOGGER.info("Table \"" + tableName + "\" not found. Creating...");
+            try (Connection conn = getConnection(context)) {
+                String sql = sqlGenerator.getCreateTableSql(tableName, modelMetadata);
+                LOGGER.debug(sql);
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.execute();
+
+                existingTables.add(tableName);
+            } catch (Exception ex) {
+                throw new SimpleOrmException("Could not create table: " + tableName, ex);
+            }
+        }
+    }
+
+    private interface ClosableIterable<T> extends Iterable<T> {
         ClosableIterator<T> iterator();
     }
 
-    private static interface ClosableIterator<T> extends Iterator<T>, AutoCloseable {
+    private interface ClosableIterator<T> extends Iterator<T>, AutoCloseable {
     }
 }

@@ -1,3 +1,9 @@
+# v1.1.0
+
+* SQL: Create table if the table does not already exist
+* SQL: Fix date handling, now supports time
+* SQL: Better support for null values
+
 # v1.0.2
 
 * Fixed more issues with null values
