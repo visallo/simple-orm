@@ -2,6 +2,9 @@ package com.v5analytics.simpleorm;
 
 import org.json.JSONObject;
 
+import java.util.Arrays;
+import java.util.Date;
+
 @Entity(tableName = "simpleModelObject")
 public class SimpleModelObject implements Comparable<SimpleModelObject> {
     @Id
@@ -18,6 +21,18 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
 
     @Field
     private Integer nullableIntColumn;
+
+    @Field
+    private boolean booleanColumn;
+
+    @Field
+    private Boolean nullableBooleanColumn;
+
+    @Field
+    private byte[] byteArrayColumn;
+
+    @Field
+    private Date dateColumn;
 
     @Field
     private JSONObject jsonColumn;
@@ -65,6 +80,38 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
         this.nullableIntColumn = nullableIntColumn;
     }
 
+    public boolean isBooleanColumn() {
+        return booleanColumn;
+    }
+
+    public void setBooleanColumn(boolean booleanColumn) {
+        this.booleanColumn = booleanColumn;
+    }
+
+    public Boolean getNullableBooleanColumn() {
+        return nullableBooleanColumn;
+    }
+
+    public void setNullableBooleanColumn(Boolean nullableBooleanColumn) {
+        this.nullableBooleanColumn = nullableBooleanColumn;
+    }
+
+    public byte[] getByteArrayColumn() {
+        return byteArrayColumn;
+    }
+
+    public void setByteArrayColumn(byte[] byteArrayColumn) {
+        this.byteArrayColumn = byteArrayColumn;
+    }
+
+    public Date getDateColumn() {
+        return dateColumn;
+    }
+
+    public void setDateColumn(Date dateColumn) {
+        this.dateColumn = dateColumn;
+    }
+
     public JSONObject getJsonColumn() {
         return jsonColumn;
     }
@@ -87,24 +134,44 @@ public class SimpleModelObject implements Comparable<SimpleModelObject> {
     }
 
     @Override
+    public String toString() {
+        return "SimpleModelObject{" +
+                "id='" + id + '\'' +
+                ", stringColumn='" + stringColumn + '\'' +
+                ", nullableStringColumn='" + nullableStringColumn + '\'' +
+                ", intColumn=" + intColumn +
+                ", nullableIntColumn=" + nullableIntColumn +
+                ", booleanColumn=" + booleanColumn +
+                ", nullableBooleanColumn=" + nullableBooleanColumn +
+                ", byteArrayColumn=" + Arrays.toString(byteArrayColumn) +
+                ", dateColumn=" + dateColumn +
+                ", jsonColumn=" + jsonColumn +
+                ", nullableJsonColumn=" + nullableJsonColumn +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         SimpleModelObject that = (SimpleModelObject) o;
 
-        if (intColumn != that.intColumn) {
+        if (intColumn != that.intColumn) return false;
+        if (booleanColumn != that.booleanColumn) return false;
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (stringColumn != null ? !stringColumn.equals(that.stringColumn) : that.stringColumn != null) return false;
+        if (nullableStringColumn != null ? !nullableStringColumn.equals(that.nullableStringColumn) : that.nullableStringColumn != null)
             return false;
-        }
-        if (id != null ? !id.equals(that.id) : that.id != null) {
+        if (nullableIntColumn != null ? !nullableIntColumn.equals(that.nullableIntColumn) : that.nullableIntColumn != null)
             return false;
-        }
-        return !(stringColumn != null ? !stringColumn.equals(that.stringColumn) : that.stringColumn != null);
-
+        if (nullableBooleanColumn != null ? !nullableBooleanColumn.equals(that.nullableBooleanColumn) : that.nullableBooleanColumn != null)
+            return false;
+        if (!Arrays.equals(byteArrayColumn, that.byteArrayColumn)) return false;
+        if (dateColumn != null ? !dateColumn.equals(that.dateColumn) : that.dateColumn != null) return false;
+        if (jsonColumn != null ? !jsonColumn.toString().equals(that.jsonColumn.toString()) : that.jsonColumn != null)
+            return false;
+        return nullableJsonColumn != null ? nullableJsonColumn.equals(that.nullableJsonColumn) : that.nullableJsonColumn == null;
     }
 
     @Override

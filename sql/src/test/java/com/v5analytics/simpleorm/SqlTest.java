@@ -47,24 +47,6 @@ public class SqlTest extends TestBase {
         properties.put(SqlSimpleOrmSession.CONFIG_USER_NAME, "sa");
         properties.put(SqlSimpleOrmSession.CONFIG_PASSWORD, "");
         session.init(properties);
-
-        try (Connection conn = session.getConnection(session.createContext())) {
-            String sql = "CREATE TABLE simpleModelObject (\n" +
-                    "  id VARCHAR(8000) PRIMARY KEY,\n" +
-                    "  visibility VARCHAR(8000) NOT NULL,\n" +
-                    "  intColumn INTEGER NOT NULL,\n" +
-                    "  nullableIntColumn INTEGER, \n" +
-                    "  stringColumn TEXT NOT NULL, \n" +
-                    "  nullableStringColumn TEXT, \n" +
-                    "  jsonColumn TEXT NOT NULL, \n" +
-                    "  nullableJsonColumn TEXT\n" +
-                    ");";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.execute();
-        } catch (SQLException e) {
-            throw new SimpleOrmException("Could not create tables", e);
-        }
-
         return session;
     }
 }
