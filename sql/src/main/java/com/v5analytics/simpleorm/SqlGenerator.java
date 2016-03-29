@@ -13,6 +13,9 @@ public class SqlGenerator {
 
     private final String tablePrefix;
 
+    // MySQL's limit is 767 (http://dev.mysql.com/doc/refman/5.7/en/innodb-restrictions.html)
+    private static final int ID_VARCHAR_SIZE = 767;
+
     // Oracle's limit is 4000 (https://docs.oracle.com/cd/B28359_01/server.111/b28320/limits001.htm)
     // MySQL's limit is 65,535 (http://dev.mysql.com/doc/refman/5.7/en/char.html)
     // H2's limit is Integer.MAX_VALUE (http://www.h2database.com/html/datatypes.html#varchar_type)
@@ -25,7 +28,7 @@ public class SqlGenerator {
     public String getCreateTableSql(String tableName, ModelMetadata modelMetadata) {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append(" (\n");
-        sb.append("  id VARCHAR(" + VARCHAR_SIZE + ") PRIMARY KEY,\n");
+        sb.append("  id VARCHAR(" + ID_VARCHAR_SIZE + ") PRIMARY KEY,\n");
         sb.append("  visibility VARCHAR(" + VARCHAR_SIZE + ") NOT NULL,\n");
         boolean first = true;
         for (Object oField : modelMetadata.getFields()) {

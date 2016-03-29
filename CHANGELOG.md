@@ -1,3 +1,7 @@
+# v1.1.1
+
+* SQL: Change max primary key in DDL to 767 to fix MySQL
+
 # v1.1.0
 
 * SQL: Create table if the table does not already exist
