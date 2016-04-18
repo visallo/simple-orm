@@ -9,7 +9,7 @@
 
     <groupId>com.v5analytics.simpleorm</groupId>
     <artifactId>simple-orm</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.1</version>
     <name>Simple ORM</name>
     <packaging>pom</packaging>
     <description>Simple ORM for Accumulo and SQL</description>
@@ -28,7 +28,7 @@
         <url>scm:git:git@github.com:v5analytics/simple-orm.git</url>
         <connection>scm:git:git@github.com:v5analytics/simple-orm.git</connection>
         <developerConnection>scm:git:git@github.com:v5analytics/simple-orm.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>simple-orm-1.1.1</tag>
     </scm>
 
     <issueManagement>
