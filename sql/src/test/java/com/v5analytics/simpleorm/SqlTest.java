@@ -42,10 +42,9 @@ public class SqlTest extends TestBase {
     protected SimpleOrmSession createSession() {
         SqlSimpleOrmSession session = new SqlSimpleOrmSession();
         Map<String, Object> properties = new HashMap<>();
-        properties.put(SqlSimpleOrmSession.CONFIG_DRIVER_CLASS, "org.h2.Driver");
-        properties.put(SqlSimpleOrmSession.CONFIG_CONNECTION_STRING, connectionString);
-        properties.put(SqlSimpleOrmSession.CONFIG_USER_NAME, "sa");
-        properties.put(SqlSimpleOrmSession.CONFIG_PASSWORD, "");
+        properties.put("simpleOrm.sql.jdbcUrl", connectionString);
+        properties.put("simpleOrm.sql.username", "sa");
+        properties.put("simpleOrm.sql.password", "");
         session.init(properties);
         return session;
     }
