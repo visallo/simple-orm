@@ -1,3 +1,7 @@
+# v1.2.0
+
+* SQL: Use Apache DBCP for SQL connection pooling
+
 # v1.1.1
 
 * SQL: Change max primary key in DDL to 767 to fix MySQL
