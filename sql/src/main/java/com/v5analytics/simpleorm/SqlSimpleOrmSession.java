@@ -1,5 +1,6 @@
 package com.v5analytics.simpleorm;
 
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -21,25 +22,34 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     public static final String CONFIG_CONNECTION_STRING = "simpleOrm.sql.connectionString";
     public static final String CONFIG_USER_NAME = "simpleOrm.sql.userName";
     public static final String CONFIG_PASSWORD = "simpleOrm.sql.password";
-    private String jdbcConnectionString;
-    private String jdbcUserName;
-    private String jdbcPassword;
-    private Set<String> existingTables = new HashSet<>();
+    public static final String CONFIG_JMX_NAME = "simpleOrm.sql.jmxName";
+    private final Set<String> existingTables = new HashSet<>();
     private SqlGenerator sqlGenerator;
+    private BasicDataSource dataSource;
 
     public void init(Map<String, Object> properties) {
-        String jdbcDriverClass = (String) properties.get(CONFIG_DRIVER_CLASS);
-        checkNotNull(jdbcDriverClass, "Missing configuration: " + CONFIG_DRIVER_CLASS);
-        try {
-            Class.forName(jdbcDriverClass);
-        } catch (ClassNotFoundException e) {
-            throw new SimpleOrmException("Could not find driver class: " + jdbcDriverClass, e);
-        }
-        jdbcConnectionString = (String) properties.get(CONFIG_CONNECTION_STRING);
-        checkNotNull(jdbcConnectionString, "Missing configuration: " + CONFIG_CONNECTION_STRING);
-        jdbcUserName = (String) properties.get(CONFIG_USER_NAME);
-        jdbcPassword = (String) properties.get(CONFIG_PASSWORD);
+        dataSource = createDataSource(properties);
         sqlGenerator = new SqlGenerator(getTablePrefix(properties));
+    }
+
+    private BasicDataSource createDataSource(Map<String, Object> properties) {
+        String driverClassName = (String) properties.get(CONFIG_DRIVER_CLASS);
+        checkNotNull(driverClassName, "Missing configuration: " + CONFIG_DRIVER_CLASS);
+
+        String url = (String) properties.get(CONFIG_CONNECTION_STRING);
+        checkNotNull(url, "Missing configuration: " + CONFIG_CONNECTION_STRING);
+
+        String username = (String) properties.get(CONFIG_USER_NAME);
+        String password = (String) properties.get(CONFIG_PASSWORD);
+        String jmxName = (String) properties.get(CONFIG_JMX_NAME);
+
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setDriverClassName(driverClassName);
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        dataSource.setJmxName(jmxName);
+        return dataSource;
     }
 
     private static String getTablePrefix(Map<String, Object> properties) {
@@ -276,26 +286,11 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
     }
 
     public Connection getConnection(SimpleOrmContext context) throws SQLException {
-        return DriverManager.getConnection(getJdbcConnectionString(context), getJdbcConnectionProperties(context));
+        return dataSource.getConnection();
     }
 
     private void closeConnection(Connection conn) throws SQLException {
         conn.close();
-    }
-
-    protected String getJdbcConnectionString(
-            @SuppressWarnings("UnusedParameters") SimpleOrmContext context
-    ) {
-        return jdbcConnectionString;
-    }
-
-    protected Properties getJdbcConnectionProperties(
-            @SuppressWarnings("UnusedParameters") SimpleOrmContext context
-    ) {
-        Properties properties = new Properties();
-        properties.put("user", jdbcUserName);
-        properties.put("password", jdbcPassword);
-        return properties;
     }
 
     private <T> ClosableIterable<T> resultSetToRows(final ModelMetadata<T> modelMetadata, final Connection conn, final ResultSet resultSet) throws SQLException {
