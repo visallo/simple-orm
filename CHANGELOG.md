@@ -1,6 +1,6 @@
 # v1.2.0
 
-* SQL: Use Apache DBCP for SQL connection pooling
+* SQL: Use HikariCP for SQL connection pooling
 
 # v1.1.1
 

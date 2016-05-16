@@ -1,11 +1,13 @@
 package com.v5analytics.simpleorm;
 
-import org.apache.commons.dbcp2.BasicDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,43 +15,30 @@ import java.sql.*;
 import java.util.*;
 import java.util.Date;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public class SqlSimpleOrmSession extends SimpleOrmSession {
     private static final int TABLE_NAME_COLUMN = 3;
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlSimpleOrmSession.class);
-    public static final String CONFIG_DRIVER_CLASS = "simpleOrm.sql.driverClass";
-    public static final String CONFIG_CONNECTION_STRING = "simpleOrm.sql.connectionString";
-    public static final String CONFIG_USER_NAME = "simpleOrm.sql.userName";
-    public static final String CONFIG_PASSWORD = "simpleOrm.sql.password";
-    public static final String CONFIG_JMX_NAME = "simpleOrm.sql.jmxName";
+    private static final String CONFIG_PREFIX = "simpleOrm.sql.";
     private final Set<String> existingTables = new HashSet<>();
     private SqlGenerator sqlGenerator;
-    private BasicDataSource dataSource;
+    private DataSource dataSource;
 
     public void init(Map<String, Object> properties) {
         dataSource = createDataSource(properties);
         sqlGenerator = new SqlGenerator(getTablePrefix(properties));
     }
 
-    private BasicDataSource createDataSource(Map<String, Object> properties) {
-        String driverClassName = (String) properties.get(CONFIG_DRIVER_CLASS);
-        checkNotNull(driverClassName, "Missing configuration: " + CONFIG_DRIVER_CLASS);
-
-        String url = (String) properties.get(CONFIG_CONNECTION_STRING);
-        checkNotNull(url, "Missing configuration: " + CONFIG_CONNECTION_STRING);
-
-        String username = (String) properties.get(CONFIG_USER_NAME);
-        String password = (String) properties.get(CONFIG_PASSWORD);
-        String jmxName = (String) properties.get(CONFIG_JMX_NAME);
-
-        BasicDataSource dataSource = new BasicDataSource();
-        dataSource.setDriverClassName(driverClassName);
-        dataSource.setUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
-        dataSource.setJmxName(jmxName);
-        return dataSource;
+    private DataSource createDataSource(Map<String, Object> config) {
+        Properties properties = new Properties();
+        for (Map.Entry<String, Object> configEntry : config.entrySet()) {
+            String key = configEntry.getKey();
+            if (key.startsWith(CONFIG_PREFIX)) {
+                key = key.substring(CONFIG_PREFIX.length());
+                properties.put(key, configEntry.getValue());
+            }
+        }
+        HikariConfig hikariConfig = new HikariConfig(properties);
+        return new HikariDataSource(hikariConfig);
     }
 
     private static String getTablePrefix(Map<String, Object> properties) {
