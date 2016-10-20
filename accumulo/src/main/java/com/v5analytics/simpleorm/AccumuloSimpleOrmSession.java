@@ -53,8 +53,10 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
 
             String accumuloInstanceName = (String) properties.get(ACCUMULO_INSTANCE_NAME);
             checkNotNull(accumuloInstanceName, "Could not find config: " + ACCUMULO_INSTANCE_NAME);
-            ZooKeeperInstance zk = new ZooKeeperInstance(accumuloInstanceName, zkServerNames);
-
+            org.apache.commons.configuration.Configuration config = new ClientConfiguration(new ArrayList<org.apache.commons.configuration.Configuration>())
+                    .withInstance(accumuloInstanceName)
+                    .withZkHosts(zkServerNames);
+            ZooKeeperInstance zk = new ZooKeeperInstance(config);
             String username = (String) properties.get(ACCUMULO_USER);
             String password = (String) properties.get(ACCUMULO_PASSWORD);
             connector = zk.getConnector(username, new PasswordToken(password));
