@@ -1,3 +1,8 @@
+# v1.3.0
+
+* Accumulo: Change version of Accumulo from 1.6.6 to 1.7.2
+* Accumulo: use ClientConfiguration when connecting to accumulo to avoid warnings
+
 # v1.2.0
 
 * SQL: Use HikariCP for SQL connection pooling
