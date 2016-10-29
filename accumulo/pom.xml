@@ -40,5 +40,11 @@
             <artifactId>accumulo-minicluster</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>2.13</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
