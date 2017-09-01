@@ -15,6 +15,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -155,12 +156,22 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
         }
     }
 
-    private <T> Iterable<T> scannerToRows(final Scanner scanner, final ModelMetadata<T> modelMetadata) {
-        return new Iterable<T>() {
+    private <T> CloseableIterable<T> scannerToRows(final Scanner scanner, final ModelMetadata<T> modelMetadata) {
+        return new CloseableIterable<T>() {
             @Override
-            public Iterator<T> iterator() {
+            public void close() throws IOException {
+                scanner.close();
+            }
+
+            @Override
+            public CloseableIterator<T> iterator() {
                 final RowIterator rowIterator = new RowIterator(scanner);
-                return new Iterator<T>() {
+                return new CloseableIterator<T>() {
+                    @Override
+                    public void close() throws IOException {
+                        scanner.close();
+                    }
+
                     @Override
                     public boolean hasNext() {
                         return rowIterator.hasNext();
@@ -185,7 +196,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
     public <T> T findById(Class<T> rowClass, String id, SimpleOrmContext context) {
         try {
             ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
-            final Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
+            Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
             try {
                 scanner.setRange(new Range(id));
                 Iterator<T> rows = scannerToRows(scanner, modelMetadata).iterator();
@@ -209,7 +220,7 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
     public <T> Iterable<T> findByIdStartsWith(Class<T> rowClass, String idPrefix, SimpleOrmContext context) {
         try {
             ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(rowClass);
-            final Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
+            Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
             scanner.setRange(Range.prefix(idPrefix));
             return scannerToRows(scanner, modelMetadata);
         } catch (TableNotFoundException e) {
@@ -221,16 +232,20 @@ public class AccumuloSimpleOrmSession extends SimpleOrmSession {
     public <T> void alterVisibility(T obj, String currentVisibility, String newVisibility, SimpleOrmContext context) {
         try {
             ModelMetadata<T> modelMetadata = ModelMetadata.getModelMetadata(obj);
-            final Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
-            scanner.setRange(new Range(modelMetadata.getId(obj)));
-            RowIterator rowIterator = new RowIterator(scanner);
-            BatchWriter writer = getBatchWriter(getTableName(modelMetadata));
-            ColumnVisibility newColumnVisibility = new ColumnVisibility(newVisibility);
-            while (rowIterator.hasNext()) {
-                Iterator<Map.Entry<Key, Value>> row = rowIterator.next();
-                alterVisibilityRow(writer, row, currentVisibility, newColumnVisibility);
+            Scanner scanner = createScanner(getTableName(modelMetadata), (AccumuloSimpleOrmContext) context);
+            try {
+                scanner.setRange(new Range(modelMetadata.getId(obj)));
+                RowIterator rowIterator = new RowIterator(scanner);
+                BatchWriter writer = getBatchWriter(getTableName(modelMetadata));
+                ColumnVisibility newColumnVisibility = new ColumnVisibility(newVisibility);
+                while (rowIterator.hasNext()) {
+                    Iterator<Map.Entry<Key, Value>> row = rowIterator.next();
+                    alterVisibilityRow(writer, row, currentVisibility, newColumnVisibility);
+                }
+                writer.flush();
+            } finally {
+                scanner.close();
             }
-            writer.flush();
         } catch (Throwable ex) {
             throw new SimpleOrmException("Could not alterVisibility", ex);
         }

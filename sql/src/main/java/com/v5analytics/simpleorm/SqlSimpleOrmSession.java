@@ -121,7 +121,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                try (ClosableIterator<T> results = resultSetToRows(modelMetadata, conn, rs).iterator()) {
+                try (CloseableIterator<T> results = resultSetToRows(modelMetadata, conn, rs).iterator()) {
                     if (!results.hasNext()) {
                         return null;
                     }
@@ -282,7 +282,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
         conn.close();
     }
 
-    private <T> ClosableIterable<T> resultSetToRows(final ModelMetadata<T> modelMetadata, final Connection conn, final ResultSet resultSet) throws SQLException {
+    private <T> CloseableIterable<T> resultSetToRows(final ModelMetadata<T> modelMetadata, final Connection conn, final ResultSet resultSet) throws SQLException {
         final ResultSetMetaData resultSetMetadata = resultSet.getMetaData();
         final String discriminatorColumnName;
         if (modelMetadata.getDiscriminatorColumnFamily() != null || modelMetadata.getDiscriminatorColumnName() != null) {
@@ -291,10 +291,24 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
             discriminatorColumnName = null;
         }
         final ModelMetadata.Type defaultType = modelMetadata.getType(null);
-        return new ClosableIterable<T>() {
+        return new CloseableIterable<T>() {
             @Override
-            public ClosableIterator<T> iterator() {
-                return new ClosableIterator<T>() {
+            public void close() {
+                try {
+                    if (!resultSet.isClosed()) {
+                        resultSet.close();
+                    }
+                    if (conn != null && !conn.isClosed()) {
+                        closeConnection(conn);
+                    }
+                } catch (Exception ex) {
+                    throw new SimpleOrmException("Could not close iterable", ex);
+                }
+            }
+
+            @Override
+            public CloseableIterator<T> iterator() {
+                return new CloseableIterator<T>() {
                     private T next;
 
                     @Override
@@ -314,6 +328,7 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                         return result;
                     }
 
+                    @Override
                     public void close() {
                         try {
                             if (!resultSet.isClosed()) {
@@ -442,12 +457,5 @@ public class SqlSimpleOrmSession extends SimpleOrmSession {
                 throw new SimpleOrmException("Could not create table: " + tableName, ex);
             }
         }
-    }
-
-    private interface ClosableIterable<T> extends Iterable<T> {
-        ClosableIterator<T> iterator();
-    }
-
-    private interface ClosableIterator<T> extends Iterator<T>, AutoCloseable {
     }
 }
